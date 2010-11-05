@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 '''
 Created on June 30, 2009
+           0.7 on Nov 5,2010
 
 @summary: A Plex Media Server plugin that integrates trailers of French web site Allocine.
-@version: 0.6
+@version: 0.7
 @author: Oncleben31
+         0.7 by Pierre - fixed non ascii characters display in the film descriptions - sped up thumbnail loading
 '''
 
 # Import the parts of the Plex Media Server Plugin API we need
@@ -45,8 +47,6 @@ PLUGIN_URL_BA_CETTESEMAINE			= "http://rss.allocine.fr/ac/bandesannonces/cettese
 PLUGIN_URL_BA_ALAFFICHE				= "http://rss.allocine.fr/ac/bandesannonces/alaffiche"
 PLUGIN_URL_BA_PROCHAINEMENT			= "http://rss.allocine.fr/ac/bandesannonces/prochainement"
 
-
-
 ####################################################################################################
 
 def Start():
@@ -63,6 +63,7 @@ def Start():
 	MediaContainer.title1 = PLUGIN_TITLE.decode('utf-8')
 	MediaContainer.viewGroup = "Menu"
 	MediaContainer.art = R(PLUGIN_ARTWORK)
+	DirectoryItem.thumb = R(PLUGIN_ICON_DEFAULT)
 	
 	# Configure HTTP Cache lifetime
 	
@@ -82,6 +83,11 @@ def MainMenu():
 
 ####################################################################################################
 # The A Ne pas Manquer menu
+
+def GetThumb(path,thumb_type):
+    image = HTTP.Request(path)
+    return DataObject(image,thumb_type) 	
+	
 def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 	dir = MediaContainer(art = R(PLUGIN_ARTWORK), viewGroup = "Menu", title2 = titreFluxRSS)
 		
@@ -92,18 +98,17 @@ def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 		title = titleEtSubtitle[0]
 		subtitle = titleEtSubtitle[1]
 		thumb = c.find('enclosure').get('url')
+		thumb_type = c.find('enclosure').get('type')
 		
 		urlFlv = "http://hd.fr.mediaplayer.allocine.fr/nmedia/" + thumb.rsplit("acmedia/medias/nmedia/")[1].rsplit(".jpg")[0] + "_hd_001.flv"
-		Log("urlFlv %s" % (urlFlv.encode("utf8")))
-		
+
 		urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
-		Log("urlDescription %s" % (urlDescription.encode("utf8")))
 		
 		pageFilm = XML.ElementFromURL(urlDescription, isHTML=True, encoding="utf-8")
 		divDescription = pageFilm.xpath('//p[contains(., "Synopsis :")]')
-		description = divDescription[0].xpath("string()").rsplit("Synopsis :")[1]
+		description = divDescription[0].xpath("string()").rsplit("Synopsis :")[1].encode("iso-8859-1")
 				
-		dir.Append(VideoItem(urlFlv, title=title.decode("utf-8"), subtitle=subtitle.decode("utf-8"), summary=description.decode("utf-8"), thumb=thumb)) 
+		dir.Append(VideoItem(urlFlv, title=title.decode("utf-8"), subtitle=subtitle.decode("utf-8"), summary=description.decode("utf-8"), thumb=Function(GetThumb,path=thumb,thumb_type=thumb_type))) 
 	
 	return dir
 
@@ -133,8 +138,3 @@ def ListeProchainement(sender):
 	return dir
 
 ####################################################################################################
-
-
-
-
-
