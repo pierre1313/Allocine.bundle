@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
 '''
 Created on June 30, 2009
-           0.7 on Nov 5,2010
+           0.7 + 0.8 on Nov 5,2010
 
 @summary: A Plex Media Server plugin that integrates trailers of French web site Allocine.
-@version: 0.7
+@version: 0.8
 @author: Oncleben31
-         0.7 by Pierre - fixed non ascii characters display in the film descriptions - sped up thumbnail loading
+         0.7 - 0.8 by Pierre - fixed non ascii characters display in the film descriptions - sped up thumbnail loading
 '''
-
-# Import the parts of the Plex Media Server Plugin API we need
-from PMS import *
-from PMS.Objects import *
-from PMS.Shortcuts import *
-import lxml
 
 # Plugin parameters
 PLUGIN_TITLE						= "Allociné"					# The plugin Title
@@ -59,7 +53,6 @@ def Start():
 	
 	# Set up our plugin's container
 	
-	#MediaContainer.title1 = PLUGIN_TITLE
 	MediaContainer.title1 = PLUGIN_TITLE.decode('utf-8')
 	MediaContainer.viewGroup = "Menu"
 	MediaContainer.art = R(PLUGIN_ARTWORK)
@@ -67,7 +60,7 @@ def Start():
 	
 	# Configure HTTP Cache lifetime
 	
-#	HTTP.SetCacheTime(PLUGIN_HTTP_CACHE_INTERVAL)
+   	HTTP.CacheTime = 3600
 
 ####################################################################################################
 # The plugin's main menu. 
@@ -85,7 +78,7 @@ def MainMenu():
 # The A Ne pas Manquer menu
 
 def GetThumb(path,thumb_type):
-    image = HTTP.Request(path)
+    image = HTTP.Request(path).content
     return DataObject(image,thumb_type) 	
 	
 def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
@@ -104,7 +97,7 @@ def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 
 		urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
 		
-		pageFilm = XML.ElementFromURL(urlDescription, isHTML=True, encoding="utf-8")
+		pageFilm = HTML.ElementFromURL(urlDescription, encoding="utf-8")
 		divDescription = pageFilm.xpath('//p[contains(., "Synopsis :")]')
 		description = divDescription[0].xpath("string()").rsplit("Synopsis :")[1].encode("iso-8859-1")
 				
