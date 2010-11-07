@@ -83,10 +83,11 @@ def GetThumb(path,thumb_type):
 	
 def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 	dir = MediaContainer(art = R(PLUGIN_ARTWORK), viewGroup = "Menu", title2 = titreFluxRSS)
-		
-	fluxXML = XML.ElementFromURL(urlFluxRSS, encoding="iso-8859-1")
+
+	fluxXML = HTML.ElementFromURL(urlFluxRSS,encoding = "iso-8859-1")
 	
 	for c in fluxXML.xpath("//item"):
+		Log(HTML.StringFromElement(c,encoding = "iso-8859-1"))
 		titleEtSubtitle = c.find('title').text.encode("iso-8859-1").rsplit(' - ',1)
 		title = titleEtSubtitle[0]
 		subtitle = titleEtSubtitle[1]
@@ -95,17 +96,25 @@ def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 		
 		urlFlv = "http://hd.fr.mediaplayer.allocine.fr/nmedia/" + thumb.rsplit("acmedia/medias/nmedia/")[1].rsplit(".jpg")[0] + "_hd_001.flv"
 
-		urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
+        #workaround a bug in HTML.ELEMENTFrom URL wher the <link> element is not parsed properly (missing </link>)
+		#urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
+		try :
+		  link = HTML.StringFromElement(c,encoding = "iso-8859-1")
+		  link = link[link.find('cfilm=')+6:]
+		  link = link[:link.find('<')]
+
+		  urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + str(link)
 		
-		pageFilm = HTML.ElementFromURL(urlDescription, encoding="utf-8")
-		divDescription = pageFilm.xpath('//p[contains(., "Synopsis :")]')
-		description = divDescription[0].xpath("string()").rsplit("Synopsis :")[1].encode("iso-8859-1")
-				
-		dir.Append(VideoItem(urlFlv, title=title.decode("utf-8"), subtitle=subtitle.decode("utf-8"), summary=description.decode("utf-8"), thumb=Function(GetThumb,path=thumb,thumb_type=thumb_type))) 
+		  pageFilm = HTML.ElementFromURL(urlDescription,encoding = "iso-8859-1")
+		  divDescription = pageFilm.xpath('//p[contains(., "Synopsis :")]')
+		  description = divDescription[0].xpath("string()").rsplit("Synopsis :")[1].encode("iso-8859-1")
+		except:
+		  description = ''
+		
+		dir.Append(VideoItem(urlFlv, title=title, subtitle=subtitle, summary=description, thumb=Function(GetThumb,path=thumb,thumb_type=thumb_type))) 
 	
-	return dir
-
-
+	return dir     
+	
 ####################################################################################################
 # The A Ne pas Manquer menu
 def ListeANePasManquer(sender):
