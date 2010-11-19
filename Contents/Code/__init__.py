@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 '''
 Created on June 30, 2009
-           0.7 + 0.8 on Nov 5,2010
+           0.7 + 0.8  + 0.9 on Nov 18,2010
 
 @summary: A Plex Media Server plugin that integrates trailers of French web site Allocine.
-@version: 0.8
+@version: 0.9
 @author: Oncleben31
          0.7 - 0.8 by Pierre - fixed non ascii characters display in the film descriptions - sped up thumbnail loading
+         0.9 : removed previouslyused workaround for a bug that has been fixed - removed Log() functions
 '''
 
 # Plugin parameters
@@ -84,10 +85,9 @@ def GetThumb(path,thumb_type):
 def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 	dir = MediaContainer(art = R(PLUGIN_ARTWORK), viewGroup = "Menu", title2 = titreFluxRSS)
 
-	fluxXML = HTML.ElementFromURL(urlFluxRSS,encoding = "iso-8859-1")
+	fluxXML = XML.ElementFromURL(urlFluxRSS)
 	
 	for c in fluxXML.xpath("//item"):
-		Log(HTML.StringFromElement(c,encoding = "iso-8859-1"))
 		titleEtSubtitle = c.find('title').text.encode("iso-8859-1").rsplit(' - ',1)
 		title = titleEtSubtitle[0]
 		subtitle = titleEtSubtitle[1]
@@ -96,14 +96,9 @@ def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 		
 		urlFlv = "http://hd.fr.mediaplayer.allocine.fr/nmedia/" + thumb.rsplit("acmedia/medias/nmedia/")[1].rsplit(".jpg")[0] + "_hd_001.flv"
 
-        #workaround a bug in HTML.ELEMENTFrom URL wher the <link> element is not parsed properly (missing </link>)
-		#urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
+		urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
 		try :
-		  link = HTML.StringFromElement(c,encoding = "iso-8859-1")
-		  link = link[link.find('cfilm=')+6:]
-		  link = link[:link.find('<')]
-
-		  urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + str(link)
+		  urlDescription = "http://www.allocine.fr/film/fichefilm_gen_cfilm=" + c.find('link').text.rsplit("cfilm=")[1]
 		
 		  pageFilm = HTML.ElementFromURL(urlDescription,encoding = "iso-8859-1")
 		  divDescription = pageFilm.xpath('//p[contains(., "Synopsis :")]')
