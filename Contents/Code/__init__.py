@@ -85,10 +85,10 @@ def GetThumb(path,thumb_type):
 def TraiteFluxRSS(urlFluxRSS, titreFluxRSS):
 	dir = MediaContainer(art = R(PLUGIN_ARTWORK), viewGroup = "Menu", title2 = titreFluxRSS)
 
-	fluxXML = XML.ElementFromURL(urlFluxRSS)
+	fluxXML = XML.ElementFromURL(urlFluxRSS,encoding = "iso-8859-1")
 	
-	for c in fluxXML.xpath("//item"):
-		titleEtSubtitle = c.find('title').text.encode("iso-8859-1").rsplit(' - ',1)
+	for c in fluxXML.xpath(".//item"):
+		titleEtSubtitle = c.xpath('.//title')[0].text.rsplit(' - ',1)
 		title = titleEtSubtitle[0]
 		subtitle = titleEtSubtitle[1]
 		thumb = c.find('enclosure').get('url')
